@@ -1,0 +1,58 @@
+# ==================================================== #
+#            Thorsten Zirwes (04/06/2023)              #
+# ==================================================== #
+
+Install instructions for Ubuntu 2204:
+
+install pre-requisite packages:
+
+>sudo apt install build-essential
+>sudo apt install python3-dev
+>sudo apt-get install python3-pip
+>sudo apt-get install -y cmake scons libboost-all-dev
+>cd /usr/bin && sudo rm -f python && sudo ln -s python3 python
+>pip3 install ipython matplotlib numpy ruamel.yaml cython pytest
+>pip install --upgrade --user setuptools==58.3.0
+
+add this line to your ~/.bashrc
+
+export PATH="$HOME/.local/bin:$PATH"
+
+then re-load the bashrc:
+
+>source ~/.bashrc
+
+set some temporary environment variables for the installation
+
+>export compilerg=`which gcc`
+>export compilergpp=`which g++`
+>export pythonver=`which python3`
+
+Prepare directory for installation:
+
+>mkdir -p ~/Programs/Cantera && cd ~/Programs/Cantera
+>mkdir -p Cantera_PMB_git && cd Cantera_PMB_git
+>git clone --recursive https://github.com/Cantera/cantera.git
+>cd cantera
+
+>scons build -j 8 prefix=$HOME/Programs/Cantera/Cantera_PMB_install python_cmd=$pythonver CC=$compilerg CXX=$compilergpp debug=no optimize=yes python_package=full system_sundials=n
+>scons install
+
+in your ~/.bashrc, add the following line:
+
+export PATH="$HOME/Programs/Cantera/Cantera_PMB_install/local/bin/:$PATH"
+
+then, source the bashrc again:
+
+>source ~/.bashrc
+
+To run the example case, go into the folder "PMB_example_cases" and run the compile script
+
+>./compile_example.sh
+
+Then run the executable
+
+>./example_PMB
+
+The program will then create tables for different flames for an equivalence ratio (phi) of 1.2 and different mass flux rates (mdot).
+

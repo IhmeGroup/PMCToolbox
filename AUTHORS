@@ -1,0 +1,60 @@
+Cantera was originally developed by Dave Goodwin, with its first public release
+in 2001. Since then, many people have contributed to Cantera. Below is a
+partial, alphabetical list of developers and contributors to Cantera over the
+years. If you've been left off, please report the omission on the Github issue
+tracker.
+
+Rounak Agarwal (@agarwalrounak)
+David Akinpelu (@DavidAkinpelu), Louisiana State University
+Emil Atz (@EmilAtz)
+Philip Berndt
+Wolfgang Bessler (@wbessler), Offenburg University of Applied Science
+Paul Blum (@paulblum)
+Tilman Bremer
+Victor Brunini (@vbrunini), Sandia National Laboratory
+Bang-Shiuh Chen (@BangShiuh), Purdue University
+Ryan Crisanti
+Nicholas Curtis (@arghdos)
+Steven DeCaluwe (@decaluwe), Colorado School of Mines
+Vishesh Devgan (@vdevgan)
+Thomas Fiala (@thomasfiala), Technische Universität München
+David Fronczek
+Mark E. Fuller (@mefuller), Technion
+Matteo Giani (@MarcDuQuesne)
+Dave Goodwin, California Institute of Technology
+China Hagström (@chinahg), Massachusetts Institute of Technology
+John Hewson (@jchewson), Sandia National Laboratory
+Trevor Hickey (@luxe)
+Yuanjie Jiang
+Benjamin Kee (@lionkey)
+Gandhali Kogekar (@gkogekar)
+Daniel Korff (@korffdm), Colorado School of Mines
+Jon Kristofer
+Samesh Lakothia (@sameshl)
+Kyle Linevitch, Jr. (@KyleLinevitchJr)
+Christopher Leuth
+Nicholas Malaya (@nicholasmalaya), University of Texas at Austin
+Thanasis Mattas (@ThanasisMattas), Aristotle University of Thessaloniki
+Manik Mayur (@manikmayur)
+Evan McCorkle
+Ivan Mitrichev (@imitrichev), Mendeleev University of Chemical Technology of Russia
+Harry Moffat (@hkmoffat), Sandia National Laboratory
+Christopher Neal (@wandadars)
+Kyle Niemeyer (@kyleniemeyer), Oregon State University
+Paul Northrop (@pwcnorthrop)
+Sebastian Pinnau (@spinnau)
+Andreas Rücker (@cannondale1492)
+Jeff Santner (@jsantner)
+Satyam Saxena (@CyberDrudge)
+Ingmar Schoegl (@ischoegl), Louisiana State University
+Santosh Shanbhogue (@santoshshanbhogue), Massachusetts Institute of Technology
+Harsh Sinha (@sin-ha)
+David Sondak
+Raymond Speth (@speth), Massachusetts Institute of Technology
+Sergey Torokhov (@band-a-prend)
+Laurien Vandewalle (@lavdwall)
+Bryan Weber (@bryanwweber), University of Connecticut
+Armin Wehrfritz (@awehrfritz)
+Richard West (@rwest), Northeastern University
+Chao Xu (@12Chao), Northeastern University
+Thorsten Zirwes (@g3bk47), Karlsruhe Institute of Technology

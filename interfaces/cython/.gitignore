@@ -1,0 +1,9 @@
+cantera/*.cpp
+cantera/*.c
+cantera/data
+cantera/test/data
+Cantera.egg-info
+dist
+setup.cfg
+LICENSE.txt
+README.rst

@@ -1,0 +1,67 @@
+# ==================================================== #
+#            Thorsten Zirwes (04/06/2023)              #
+#           Guillaumne Vignat (04/10/2023)             #
+# ==================================================== #
+
+Install instructions for MacOS:
+
+
+Install Anaconda with Python 3 (if required, it should not be necessary to reinstall python/anaconda)
+
+Install Homebrew:
+>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+Install Xcode command line utils
+>xcode-select --install
+
+install pre-requisite packages:
+
+>brew install cmake scons boost
+>conda create -n ct-PMB python=3.8
+>conda activate ct-PMB
+>conda install ipython matplotlib numpy ruamel.yaml cython pytest
+>conda install setuptools==58.3.0
+
+add this line to your ~/.bashrc
+
+>export PATH="$HOME/.local/bin:$PATH"
+
+then re-load the bashrc:
+
+>source ~/.bashrc
+>conda activate ct-PMB
+
+Set some temporary environment variables for the installation
+
+>which gcc
+>export compilerg=XXX !! Copy path from previous command
+>which g++
+>export compilergpp=XXX !! Copy path from previous command
+>which python
+>export pythonver=XXX !! Copy path from previous command. Check that it is pointing to your Anaconda python!
+>export boostpath=!!!Path to boost within homebrew, should be /opt/homebrew/Cellar/boost/1.81.0_1/include/!!! 
+
+Prepare directory for installation:
+
+>mkdir -p ~/Programs/Cantera && cd ~/Programs/Cantera
+>mkdir -p Cantera_PMB_git && cd Cantera_PMB_git
+Copy the installation files to this directory
+>cd cantera
+
+Adapt the prefix path in the command below
+>scons build prefix=/Users/gvignat/Documents/CanteraPMB/Cantera_PMB_install/ python_cmd=$pythonver CC=$compilerg CXX=$compilergpp debug=no optimize=yes python_package=full system_sundials=n boost_inc_dir=$boostpath
+>scons install
+
+Note: Python 3.11 removed the "rU" option in open. You can modify this option in the source code in case it poses some issue
+
+in your ~/.bashrc, add the following line:
+
+export PATH="$HOME/Programs/Cantera/Cantera_PMB_install/local/bin/:$PATH" !!! Adapt to your path you are using
+
+then, source the bashrc again:
+
+>source ~/.bashrc
+
+To run the example case, go into the folder "PMB_example_cases" and run the compile script
+
+Don't forget to add Mac specific compiler flags to the "compile_example.sh" files before running (see also "compile_example.sh_MACOSX")

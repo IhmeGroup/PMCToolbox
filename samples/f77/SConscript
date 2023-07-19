@@ -1,0 +1,52 @@
+from os.path import join as pjoin, relpath
+from buildutils import *
+
+Import('env', 'install', 'buildSample')
+localenv = env.Clone()
+
+localenv['mak_stdlib'] = ['-l' + lib for lib in env['cxx_stdlib']]
+
+# (program name, [source files])
+samples = [('ctlib', ['ctlib.f']),
+           ('isentropic', ['isentropic.f'])]
+
+ftn_demo = localenv.SharedObject('demo_ftnlib.cpp',
+                                 CPPPATH=['#include', localenv['boost_inc_dir'],
+                                    localenv['extra_inc_dirs']])
+for program_name, fortran_sources in samples:
+    buildSample(localenv.Program, program_name,
+                fortran_sources + ftn_demo,
+                CPPPATH=['#build/src/fortran', '#include'],
+                LIBS=env['cantera_libs']+['cantera_fortran']+env['cxx_stdlib'],
+                LIBPATH=[env['sundials_libdir'], localenv['blas_lapack_dir'],
+                         env['extra_lib_dirs'], '#build/lib'],
+                LINK='$FORTRAN_LINK')
+
+# Generate SConstruct file to be installed
+incdirs = (localenv['ct_incroot'], localenv['sundials_include'],
+           localenv['boost_inc_dir']) + tuple(localenv['extra_inc_dirs'])
+libs = ['cantera_fortran'] + localenv['cantera_libs'] + env['cxx_stdlib']
+libdirs = ((localenv['ct_libdir'], localenv['sundials_libdir'],
+            localenv['blas_lapack_dir']) + tuple(localenv['extra_lib_dirs']))
+linkflags = ('-g', localenv['thread_flags'])
+
+mak_path = pjoin(localenv['ct_incroot'], 'cantera', 'Cantera.mak')
+if ' ' in mak_path:
+    # There is no reasonable way to handle spaces in Makefile 'include'
+    # statement, so we fall back to using the relative path instead
+    mak_path = relpath(mak_path, pjoin(localenv["ct_sampledir"], "f77"))
+localenv['tmpl_Cantera_dot_mak'] = mak_path
+
+localenv['tmpl_cantera_incdirs'] = repr([x for x in incdirs if x])
+localenv['tmpl_cantera_libs'] = repr(libs)
+localenv['tmpl_cantera_libdirs'] = repr([x for x in libdirs if x])
+localenv['tmpl_cantera_linkflags'] = repr([x for x in linkflags if x])
+localenv['tmpl_cantera_frameworks'] = repr(localenv['FRAMEWORKS'])
+
+sconstruct = localenv.SubstFile('SConstruct', 'SConstruct.in')
+
+# Generate Makefile to be installed
+makefile = localenv.SubstFile('Makefile', 'Makefile.in')
+
+install('$inst_sampledir/f77', makefile)
+install('$inst_sampledir/f77', sconstruct)

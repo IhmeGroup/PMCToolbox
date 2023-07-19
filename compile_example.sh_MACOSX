@@ -1,0 +1,6 @@
+# Check paths below before running this script!
+
+CANTERAPATH=/Users/gvignat/Documents/CanteraPMB/Cantera_PMB_install
+BOOSTPATH=/opt/homebrew/Cellar/boost/1.81.0_1/include/
+
+g++ -I${CANTERAPATH}/include/ -I${BOOSTPATH} example_PMB.cpp -v -Wl, -v -std=c++11 -O2 -pthread -DNDEBUG -L${CANTERAPATH}/lib/ -lcantera -framework Accelerate -o example_PMB

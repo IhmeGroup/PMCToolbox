@@ -1,0 +1,44 @@
+#!/bin/sh
+
+if [ -z $LD_LIBRARY_PATH ]; then
+    LD_LIBRARY_PATH=@ct_libdir@
+else
+    LD_LIBRARY_PATH=@ct_libdir@:$LD_LIBRARY_PATH
+fi
+export LD_LIBRARY_PATH
+
+if [ -z $PKG_CONFIG_PATH ]; then
+    PKG_CONFIG_PATH=@ct_libdir@/pkgconfig
+else
+    PKG_CONFIG_PATH=@ct_libdir@/pkgconfig:$PKG_CONFIG_PATH
+fi
+export PKG_CONFIG_PATH
+
+PYTHON_CMD=@python_cmd@
+export PYTHON_CMD
+
+PATH=@ct_bindir@:$PATH
+export PATH
+
+if [ "@python_cmd@" != "`which python`" ]; then
+   alias ctpython=@python_cmd@
+fi
+
+if [ "@matlab_toolbox@" = "y" ]; then
+    if [ -z $MATLABPATH ]; then
+        MATLABPATH=@ct_matlab_dir@:@ct_matlab_dir@/1D
+    else
+        MATLABPATH=$MATLABPATH:@ct_matlab_dir@:@ct_matlab_dir@/1D
+    fi
+    export MATLABPATH
+fi
+
+if [ "@python_module_loc_sc@" != "" ]; then
+    if [ -z $PYTHONPATH ]; then
+        PYTHONPATH=@python_module_loc_sc@
+    else
+        PYTHONPATH=@python_module_loc_sc@:$PYTHONPATH
+    fi
+fi
+
+export PYTHONPATH
