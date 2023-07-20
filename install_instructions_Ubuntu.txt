@@ -1,5 +1,5 @@
 # ==================================================== #
-#            Thorsten Zirwes (04/06/2023)              #
+#            Thorsten Zirwes (07/20/2023)              #
 # ==================================================== #
 
 Install instructions for Ubuntu 2204:
@@ -32,10 +32,13 @@ Prepare directory for installation:
 
 >mkdir -p ~/Programs/Cantera && cd ~/Programs/Cantera
 >mkdir -p Cantera_PMB_git && cd Cantera_PMB_git
->git clone --recursive https://github.com/Cantera/cantera.git
->cd cantera
+>git clone --recursive https://github.com/IhmeGroup/PMCToolbox
+>cd PMCToolbox
 
 >scons build -j 8 prefix=$HOME/Programs/Cantera/Cantera_PMB_install python_cmd=$pythonver CC=$compilerg CXX=$compilergpp debug=no optimize=yes python_package=full system_sundials=n
+
+If there are problems with missing python modules, set python_package=minimal
+
 >scons install
 
 in your ~/.bashrc, add the following line:
@@ -46,13 +49,6 @@ then, source the bashrc again:
 
 >source ~/.bashrc
 
-To run the example case, go into the folder "PMB_example_cases" and run the compile script
+To run the example cases, go into the folder "PMB_example_cases" and the respective directories therein. Compile and run the examples by running the script
 
 >./compile_example.sh
-
-Then run the executable
-
->./example_PMB
-
-The program will then create tables for different flames for an equivalence ratio (phi) of 1.2 and different mass flux rates (mdot).
-
