@@ -44,9 +44,8 @@ Set some temporary environment variables for the installation
 Prepare directory for installation:
 
 >mkdir -p ~/Programs/Cantera && cd ~/Programs/Cantera
->mkdir -p Cantera_PMB_git && cd Cantera_PMB_git
-Copy the installation files to this directory
->cd cantera
+>git clone --recursive https://github.com/IhmeGroup/PMCToolbox
+>cd PMCToolbox
 
 Adapt the prefix path in the command below
 >scons build prefix=/Users/gvignat/Documents/CanteraPMB/Cantera_PMB_install/ python_cmd=$pythonver CC=$compilerg CXX=$compilergpp debug=no optimize=yes python_package=full system_sundials=n boost_inc_dir=$boostpath
