@@ -4,6 +4,9 @@ partial, alphabetical list of developers and contributors to Cantera over the
 years. If you've been left off, please report the omission on the Github issue
 tracker.
 
+This branch of Cantera for combustion in porous media was developed by
+Thorsten Zirwes and Guillaume Vignat.
+
 Rounak Agarwal (@agarwalrounak)
 David Akinpelu (@DavidAkinpelu), Louisiana State University
 Emil Atz (@EmilAtz)
@@ -53,6 +56,7 @@ David Sondak
 Raymond Speth (@speth), Massachusetts Institute of Technology
 Sergey Torokhov (@band-a-prend)
 Laurien Vandewalle (@lavdwall)
+Guillaume Vignat (@gvignat)
 Bryan Weber (@bryanwweber), University of Connecticut
 Armin Wehrfritz (@awehrfritz)
 Richard West (@rwest), Northeastern University
