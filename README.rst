@@ -14,7 +14,9 @@ Example cases for combustion in porous media as well as validation cases are loc
 
 ``PMB_example_cases/``
 
-Details of the implemented numerical methods and models can be found in [1]
+Details of the implemented numerical methods and models can be found in [1].
+
+Equations, model description, and numerics can be found in the Github wiki (work in progress -- see Combustion and Flame paper for now).
 
 How to cite
 ================
