@@ -10,6 +10,8 @@ For install instructions, see
 
 ``install_instructions_Ubuntu.txt``
 
+For Windows, install Ubuntu in WSL and follow the install instructions for Ubuntu.
+
 Example cases for combustion in porous media as well as validation cases are located in
 
 ``PMB_example_cases/``
