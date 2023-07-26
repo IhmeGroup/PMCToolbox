@@ -21,6 +21,10 @@ Equations, model description, and numerics can be found in the Github wiki (work
 
 ![Picture of a PMB at Stanford](https://github.com/IhmeGroup/PMCToolbox/blob/main/PMB_example_cases/pmb_stanford.png)
 
+
+<img src="https://github.com/IhmeGroup/PMCToolbox/blob/main/PMB_example_cases/pmb_stanford.png" width=48">
+
+
 # How to cite
 
 If you use this code, please cite as:
