@@ -20,6 +20,8 @@ Details of the implemented numerical methods and models can be found in [1].
 
 Equations, model description, and numerics can be found in the Github wiki (work in progress -- see Combustion and Flame paper for now).
 
+![Picture of a PMB at Stanford](https://github.com/IhmeGroup/PMCToolbox/blob/main/PMB_example_cases/pmb_stanford.png)
+
 How to cite
 ================
 
