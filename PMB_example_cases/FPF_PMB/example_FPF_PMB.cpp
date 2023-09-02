@@ -117,14 +117,14 @@ int main ()
     double Tamb = T0;
     double p0 = 101325.;
 
-    double initialFlameProfileThickness = 0.01;
-    std::size_t nInitialPoints = 10;
+    double initialFlameProfileThickness = 0.02;
+    std::size_t nInitialPoints = 36;
     double totalLength = foam_stack.totalHeight;
     std::string fuel = "NH3:0.85,O2:0.15";
     std::string oxidizer = "O2:0.21,N2:0.79";
 
     std::vector<double> phis{1.0};
-    Cantera::vector_fp mdots{0.40};
+    Cantera::vector_fp mdots{0.4};
 
     bool freeflame = true; // decide if this should be a matrix-stabilized flame or freely propagating flame
     bool radiation = true; // decide if you want to include radial and axial radiation in the simulation
