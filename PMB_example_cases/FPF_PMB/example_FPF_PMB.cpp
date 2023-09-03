@@ -11,7 +11,7 @@
 //  Combustion and Flame, 2023
 // ========================================================================
 
-#include "example_PMB.h"
+#include "../example_PMB.h"
 
 using namespace Cantera;
 
