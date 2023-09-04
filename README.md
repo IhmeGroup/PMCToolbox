@@ -27,4 +27,4 @@ _Picture of a porous media burner operated with ammonia and hydrogen._
 If you use this code, please cite as:
 
 T. Zirwes, G. Vignat, E.R. Toro, E. Boigne, K. Younes, D. Trimis, M. Ihme
-Improving volume-averaged simulations of matrix-stabilized combustion through direct X-ray µCT characterization: Application to NH3/H2-air combustion, Combustion and Flame, 2023
+Improving volume-averaged simulations of matrix-stabilized combustion through direct X-ray µCT characterization: Application to NH3/H2-air combustion, Combustion and Flame, 2023, https://doi.org/10.1016/j.combustflame.2023.113020
