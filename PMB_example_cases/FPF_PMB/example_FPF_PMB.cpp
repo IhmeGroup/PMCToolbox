@@ -120,10 +120,10 @@ int main ()
     double initialFlameProfileThickness = 0.02;
     std::size_t nInitialPoints = 36;
     double totalLength = foam_stack.totalHeight;
-    std::string fuel = "NH3:0.85,O2:0.15";
+    std::string fuel = "NH3:0.7,H2:0.3";
     std::string oxidizer = "O2:0.21,N2:0.79";
 
-    std::vector<double> phis{1.0};
+    std::vector<double> phis{1.3};
     Cantera::vector_fp mdots{0.4};
 
     bool freeflame = true; // decide if this should be a matrix-stabilized flame or freely propagating flame
