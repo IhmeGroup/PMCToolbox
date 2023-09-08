@@ -313,7 +313,7 @@ class PMReactor(ct.ExtensibleIdealGasConstPressureReactor):
         # convective transport
         RHS[Tindex] += self.A * mdot * (h_in - enthalpy_loss)
         # chemical contribution
-        RHS[Tindex] += hrr * self.V
+        RHS[Tindex] += hrr * self.V * porosity
 
     def before_component_index(self, name):
         if name == "Ts":
