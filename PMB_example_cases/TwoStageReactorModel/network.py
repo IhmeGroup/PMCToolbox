@@ -172,13 +172,6 @@ def run_network(twoStages, solidInSecondStage, injectionInSecondStage, phi_p, fu
                                solid_phase=ct.Solution("SiC.yaml"),
                                emissivity=0.85)
 
-    SiC30PPI = SolidProperties(porosity=0.86,
-                               extinction_coefficient=526,
-                               heat_conductivity=effectiveConductivitySiC,
-                               specific_area=934,
-                               solid_phase=ct.Solution("SiC.yaml"),
-                               emissivity=0.85)
-
     SiC20PPI = SolidProperties(porosity=0.86,
                                extinction_coefficient=860,
                                heat_conductivity=effectiveConductivitySiC,
@@ -464,21 +457,7 @@ def run_network(twoStages, solidInSecondStage, injectionInSecondStage, phi_p, fu
                 midpoint=midpoint,
                 chemistry=True,
                 TsInit=gas_hot.T,
-                solid=SiC30PPI,
-                hasSolid=solidInSecondStage)
-
-            reactors.append(PMReactor(gas_hot, props=props))
-
-
-        elif midpoint < 5*inch:
-            # x >= 3 inches, fill the reactors with hot 10 PPI SiC
-            props = ReactorProperties(
-                diameter=2 * inch,
-                length=rL,
-                midpoint=midpoint,
-                chemistry=True,
-                TsInit=gas_hot.T,
-                solid=SiC30PPI,
+                solid=SiC3PPI,
                 hasSolid=solidInSecondStage)
 
             reactors.append(PMReactor(gas_hot, props=props))
