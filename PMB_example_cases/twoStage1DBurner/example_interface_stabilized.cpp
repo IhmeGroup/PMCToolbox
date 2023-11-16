@@ -292,7 +292,7 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
     TsFixed.resize(m_points);
     xc.resize(m_points);
 
-    double m_relax = 1.0;
+    double m_relax = 0.;//1.0;
     for (int i=0; i!=static_cast<int>(m_points); ++i)
     {
         TsFixed[i] = m_relax*Tsolid_q(i) + (1.-m_relax)*Tsolid_prev[i];
@@ -1027,12 +1027,26 @@ int main ()
     Cantera::vector_fp TsFixed;
 
 
-    for(int it = 0; it != 10; ++it)
-    {
-        std::cout<<"=============================================="<<std::endl;
-        std::cout<<"===========   ITERATION TS  ====================="<<std::endl;
-        std::cout<<"=============================================="<<std::endl;
+    Cantera::vector_fp gasTs_prev;
+    Cantera::vector_fp gasT_prev;
+    Cantera::vector_fp gasx_prev;
+    Cantera::vector_fp gasTs_curr;
+    Cantera::vector_fp gasT_curr;
+    Cantera::vector_fp gasx_curr;
+    Cantera::vector_fp T_tmp;
 
+    Cantera::vector_fp gasTs_prev_second;
+    Cantera::vector_fp gasT_prev_second;
+    Cantera::vector_fp gasx_prev_second;
+    Cantera::vector_fp gasTs_curr_second;
+    Cantera::vector_fp gasT_curr_second;
+    Cantera::vector_fp gasx_curr_second;
+
+    setTx_second(gasx_prev_second, gasT_prev_second, gasTs_prev_second);
+    setTx(gasx_prev, gasT_prev, gasTs_prev);
+
+    for(int it = 0; it != 1000; ++it)
+    {
 
         solveTsolid(flow, flow_second, flame, flame_second, prevMesh, xc, TsFixed); // solve the solid temperature equation for both domains coupled
 
@@ -1044,21 +1058,19 @@ int main ()
             flow.xc[i] = xc[i];
             flow.TsFixed[i] = TsFixed[i];
         }
+
         flow_second.xc.resize(flow_second.nPoints());
         flow_second.TsFixed.resize(flow_second.nPoints());
         for(size_t i = 0; i!=flow_second.nPoints(); ++i)
         {
             flow_second.xc[i] = xc[i+flow.nPoints()-1];
-            flow_second.TsFixed[i] = TsFixed[i+flow.nPoints()-1];
+            flow_second.TsFixed[i] = TsFixed.at(i+flow.nPoints()-1);
         }
+
 
         // do not solve the solid temperature. use the fixed values
         flow.set_externTsolidEveryIteration(false);
         flow_second.set_externTsolidEveryIteration(false);
-
-        std::cout<<"=============================================="<<std::endl;
-        std::cout<<"===========   ITERATION 1st  ====================="<<std::endl;
-        std::cout<<"=============================================="<<std::endl;
 
         //solve first stage
         flame.solve(loglevel,true);
@@ -1074,7 +1086,7 @@ int main ()
         Cantera::vector_fp YSecond_in(nsp);
         for(size_t k=0; k!=nsp; ++k)
             YSecond_in[k] = mdot_p * Yfirst_out[k] + mdot_s * Y_second[k];
-        gas_del.setState_TPY(300.,p0,YSecond_in.data());
+        gas_del.setState_TPY(Tsecond_in,p0,YSecond_in.data());
         gas_del.getMassFractions(YSecond_in.data());
         gas_del.getMoleFractions(x.data());
         double hsecond_in_combined = mdot_p/mdot_g * hfirst_out + mdot_s/mdot_g*hsecond_in;
@@ -1087,21 +1099,29 @@ int main ()
         inlet_second.setTemperature(Tsecond_in_combined);
         inlet_second.setTsolid(Tsfirst_out);
 
-
-
-        std::cout<<"=============================================="<<std::endl;
-        std::cout<<"===========   ITERATION 2nd  ====================="<<std::endl;
-        std::cout<<"=============================================="<<std::endl;
-
- 
+        flow_second.TsFixed[0] = Tsfirst_out;
 
         //solve second stage with updated inlet
         flame_second.solve(loglevel,true);
 
-        std::cout<<"=============================================="<<std::endl;
-        std::cout<<"===========   ITERATION done  ====================="<<std::endl;
-        std::cout<<"=============================================="<<std::endl;
 
+
+        // evaluate temperature residuals on each domain
+        setTx(gasx_curr, gasT_curr, gasTs_curr);
+        interpolate_T(gasx_curr, gasx_prev, gasT_prev, T_tmp);
+        double L2gas= L2(gasT_curr, T_tmp);
+        interpolate_T(gasx_curr, gasx_prev, gasTs_prev, T_tmp);
+        double L2solid= L2(gasTs_curr, T_tmp);
+
+        setTx_second(gasx_curr_second, gasT_curr_second, gasTs_curr_second);
+        interpolate_T(gasx_curr_second, gasx_prev_second, gasT_prev_second, T_tmp);
+        double L2gas_second = L2(gasT_curr_second, T_tmp);
+        interpolate_T(gasx_curr_second, gasx_prev_second, gasTs_prev_second, T_tmp);
+        double L2solid_second = L2(gasTs_curr_second, T_tmp);
+        std::cout<<"L2 1st stage gas:   "<<L2gas<<'\n';
+        std::cout<<"L2 1st stage solid: "<<L2solid<<'\n';
+        std::cout<<"L2 2nd stage gas:   "<<L2gas_second<<'\n';
+        std::cout<<"L2 2nd stage solid: "<<L2solid_second<<'\n';
     }
 
     std::cout<<"================================================================================="<<std::endl;
