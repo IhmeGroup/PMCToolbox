@@ -709,7 +709,7 @@ public:
         return m_do_solid_temperature[j];
     }
 
-    void set_externTsolidEveryIteration(bool b){ m_externTsolidEveryIteration=true; }
+    void set_externTsolidEveryIteration(bool b){ m_externTsolidEveryIteration=b; }
     void set_relaxation(double r){m_relax=r;}
 
     virtual void updateSolidPhaseProperties(double* x, size_t jmin, size_t jmax)
