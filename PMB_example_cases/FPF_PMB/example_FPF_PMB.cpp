@@ -128,10 +128,15 @@ int main ()
 
     bool freeflame = true; // decide if this should be a matrix-stabilized flame or freely propagating flame
     bool radiation = true; // decide if you want to include radial and axial radiation in the simulation
-    int iterations = 50;
+    int iterations = 500;
+    double residual = 0.01;
+    double relax = 1;
+    Cantera::vector_fp initial_Ts_x = {0., 0.057, 0.060, 1.5}; // locations for initial temperature values
+    Cantera::vector_fp initial_Ts   = {300., 300., 1600., 1200.}; // intital solid temperatures
+
     solveFlames(*sol, foam_stack, mdots, phis, fuel, oxidizer, T0, p0, Tamb,
         initialFlameProfileThickness, totalLength, nInitialPoints, 0.5*totalLength,
-        freeflame,radiation,iterations,false,1);
+        freeflame,radiation,iterations,residual,relax,false,1,initial_Ts_x,initial_Ts);
 
     std::exit(EXIT_SUCCESS);
 }

@@ -122,14 +122,21 @@ int main ()
     std::string oxidizer = "O2:0.21,N2:0.79";
 
     std::vector<double> phis{1.0};
-    Cantera::vector_fp mdots{0.30,0.31,0.32,0.33,0.34,0.35};
+    Cantera::vector_fp mdots{0.30,0.31,0.32};
+
+    // initial profile for the solid temperature
+    Cantera::vector_fp initial_Ts_x = {0., 0.0498, 0.0518, 1.5}; // locations for initial temperature values
+    Cantera::vector_fp initial_Ts   = {300., 300., 1600., 1200.}; // intital solid temperatures
+
 
     bool freeflame = false; // decide if this should be a matrix-stabilized flame or freely propagating flame
     bool radiation = true; // decide if you want to include radial and axial radiation in the simulation
-    int iterations = 50;
+    int iterations = 500; // maximum number of iterations between gas and solid phase
+    double residual = 0.01; // stop iterating once the residuals of both gas and solid temperature are below this value
+    double relax = 1.0; // explicit under-relaxation factor
     solveFlames(*sol, foam_stack, mdots, phis, fuel, oxidizer, T0, p0, Tamb,
         initialFlameProfileThickness, totalLength, nInitialPoints, 0.5*totalLength,
-        freeflame,radiation,iterations,false,1);
+        freeflame,radiation,iterations,residual,relax,false,1,initial_Ts_x,initial_Ts);
 
     std::exit(EXIT_SUCCESS);
 }

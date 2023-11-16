@@ -39,7 +39,7 @@ auto extcoeff_den = std::make_shared<Cantera::Const1>(Cantera::Const1(3*(1-0.8))
 auto extcoeff = new Cantera::Ratio1(*extcoeff_den, *pore_dia);
 
 double Length = 0.2;
-double coeffs[] = {0.1,0.8/Length};
+double coeffs[] = {0.1,0.9/Length};
 //double arr[] = {4,0.1};
 auto porosity_function = Cantera::make_shared<Cantera::Poly1>(Cantera::Poly1(1, coeffs));
 
@@ -77,7 +77,8 @@ std::vector<FoamProperties> createFoams()
 
 int main ()
 {
-    auto sol = Cantera::newSolution("data/H2_K_10_12_0_OD.yaml");
+    //auto sol = Cantera::newSolution("data/H2_K_10_12_0_OD.yaml");
+    auto sol = Cantera::newSolution("data/Arunthanayothin.yaml");
 
     double diameter = 2*inch;
     FoamStack foam_stack(createFoams(), diameter);
@@ -86,25 +87,29 @@ int main ()
     double Tamb = T0;
     double p0 = 101325.;
 
-    double mdot_ref = 2.00000;
+    double mdot_ref = 0.015;
 
     double initialFlameProfileThickness = 0.005;
-    double initialFlameLocation = 0.1;
+    double initialFlameLocation = 0.055;
     std::size_t nInitialPoints = 3;
     double totalLength = foam_stack.totalHeight;
-    std::string fuel = "H2";
+    std::string fuel = "NH3";
     std::string oxidizer = "O2:0.21,N2:0.79";
 
-    Cantera::vector_fp phis{1.0};
+    Cantera::vector_fp phis{1.3};
     Cantera::vector_fp mdots{mdot_ref};
+
+    Cantera::vector_fp initial_Ts_x = {0., 0.05, 0.051, 1.5}; // locations for initial temperature values
+    Cantera::vector_fp initial_Ts   = {300., 300., 1887., 1887.}; // intital solid temperatures
 
     bool freeflame = false; // decide if this should be a matrix-stabilized flame or freely propagating flame
     bool radiation = false; // decide if you want to include radial and axial radiation in the simulation
-    int iterations = 300;
-
+    int iterations = 10000;
+    double residual = 0.4;
+    double relax = 1.0;
     solveFlames(*sol, foam_stack, mdots, phis, fuel, oxidizer, T0, p0, Tamb,
         initialFlameProfileThickness, totalLength, nInitialPoints, initialFlameLocation,
-        freeflame,radiation,iterations,false,1);
+        freeflame,radiation,iterations,residual,relax,false,1,initial_Ts_x,initial_Ts);
 
     std::exit(EXIT_SUCCESS);
 }

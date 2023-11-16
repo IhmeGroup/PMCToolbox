@@ -36,7 +36,8 @@
 bool solveFlames(Cantera::Solution& sol, Cantera::FoamStack& foam_stack, const Cantera::vector_fp& mdots, const Cantera::vector_fp& phis,
         const std::string& fuel, const std::string& ox, double T0, double p0, double Tamb,
         double initialFlameProfileThickness, double totalLength, std::size_t nInitialPoints, double expected_flame_location,
-        bool freeflame, bool radiation, int iterations, bool deactivateSolid, int loglevel)
+        bool freeflame, bool radiation, int iterations, double residual, double relax, bool deactivateSolid, int loglevel,
+        const Cantera::vector_fp& initial_Ts_x = {}, const Cantera::vector_fp& initial_Ts = {})
 {
     using namespace Cantera;
 
@@ -166,9 +167,15 @@ bool solveFlames(Cantera::Solution& sol, Cantera::FoamStack& foam_stack, const C
     if (freeflame)
         flame.setFixedTemperature(0.5 * (T0 + Tad));
 
+    if (initial_Ts_x.size() == 0)
+    {
+        flow.setInitialGuessFile("./data/initial_Ts_profile.txt");
+        flow.read_TsProfile();
+    }
+    else
+        flow.set_initial_guess_Ts(initial_Ts_x, initial_Ts);
 
-    flow.setInitialGuessFile("./data/initial_Ts_profile.txt");
-    flow.read_TsProfile();
+    flow.set_relaxation(relax);
     //flow.setSolid(false);
     flow.set_fixedTemperature(true);
     flow.solveEnergyEqn();
@@ -184,7 +191,7 @@ bool solveFlames(Cantera::Solution& sol, Cantera::FoamStack& foam_stack, const C
         double ratio = 2.0;
         double slope = 0.15;
         double curve = 0.25;
-        double prune = -1;
+        double prune = 0.01;
 
         flame.setRefineCriteria(flowdomain, ratio, slope, curve, prune);
 
@@ -226,10 +233,91 @@ bool solveFlames(Cantera::Solution& sol, Cantera::FoamStack& foam_stack, const C
                 flow.setTransientTolerances(1e-7, 1e-13);
                 flow.setSteadyTolerances(1e-7, 1e-13);
 
-                for (int i=0; i!=iterations; ++i) // todo: better to use a residual instead of fixed iteration count
+                Cantera::vector_fp gasT_prev;
+                Cantera::vector_fp gasTs_prev;
+                Cantera::vector_fp gasx_prev;
+                Cantera::vector_fp gasT_curr;
+                Cantera::vector_fp gasTs_curr;
+                Cantera::vector_fp gasx_curr;
+                Cantera::vector_fp T_tmp;
+
+                auto setTx = [&flow,&flame,flowdomain](Cantera::vector_fp& x, Cantera::vector_fp& T, Cantera::vector_fp& Ts)
+                {
+                    T.resize(flow.nPoints());
+                    Ts.resize(flow.nPoints());
+                    x.resize(flow.nPoints());
+                    for (std::size_t i=0; i!=flow.nPoints(); ++i)
+                    {
+                        x[i] = flow.grid(i);
+                        Ts[i] = flame.value(flowdomain,flow.componentIndex("Tsolid"),i);
+                        T[i] = flame.value(flowdomain,flow.componentIndex("T"),i);
+                    }
+                };
+
+                auto interpolate_T = [](const Cantera::vector_fp& vxnew, const Cantera::vector_fp& vxold, const Cantera::vector_fp& Told, Cantera::vector_fp& Tnew)
+                {
+                    Tnew.resize(vxnew.size());
+                    size_t pos = 0;
+                    for(std::size_t p=0; p!=vxnew.size(); ++p)
+                    {
+                        double xnew = vxnew[p];
+                        while(true)
+                        {
+                            double xold = vxold[pos];
+                            if (std::abs(xold-xnew)<1e-12)
+                            {
+                                Tnew[p] = Told[pos];
+                                break;
+                            }
+                            else if (xold < xnew && pos == vxold.size()-1)
+                            {
+                                Tnew[p] = Told[pos];
+                                break;
+                            }
+                            else if (xold <= xnew && vxold[pos+1] >= xnew)
+                            {
+                                Tnew[p] = Told[pos] + (xnew-xold)*(Told[pos+1]-Told[pos])/(vxold[pos+1]-vxold[pos]);
+                                break;
+                            }
+                            else
+                                ++pos;
+                        }
+                    }
+                };
+
+                auto L2 = [](const Cantera::vector_fp& a, const Cantera::vector_fp& b)
+                {
+                    double sum = 0.;
+                    for (size_t i=0; i!=a.size(); ++i)
+                        sum += (a[i]-b[i]) * (a[i]-b[i]);
+                    return std::sqrt(sum/a.size());
+                };
+
+                setTx(gasx_prev, gasT_prev, gasTs_prev);
+                for (int i=0; i!=iterations; ++i)
                 {
                     flow.set_firstSolve(true);
-                    flame.solve(loglevel,false);
+                    flame.solve(loglevel,true);
+
+                    setTx(gasx_curr, gasT_curr, gasTs_curr);
+                    std::cout<<"Coupling gas and solid: "<<i+1<<"/"<<iterations<<'\n';
+
+                    // interpolate old results onto grid of new solution
+                    interpolate_T(gasx_curr, gasx_prev, gasT_prev, T_tmp);
+                    double L2gas = L2(gasT_curr, T_tmp);
+                    std::cout<<"  L2 Tg: "<<L2gas;
+                    interpolate_T(gasx_curr, gasx_prev, gasTs_prev, T_tmp);
+                    double L2solid = L2(gasTs_curr, T_tmp);
+                    std::cout<<"  L2 Ts: "<<L2solid;
+
+                    if (L2gas < residual && L2solid < residual)
+                    {
+                        std::cout<<'\n'<<"Phases converged!"<<'\n';
+                        break;
+                    }
+                    gasx_curr.swap(gasx_prev);
+                    gasT_curr.swap(gasT_prev);
+                    gasTs_curr.swap(gasTs_prev);
                 }
 
                 std::cout<<"success"<<std::endl;

@@ -966,6 +966,20 @@ public:
             TsFixed.push_back(ts);
         }
     }
+
+    void set_initial_guess_Ts(const vector_fp& x, const vector_fp& ts)
+    {
+        if(x.size() != ts.size())
+        {
+            std::cerr<<"ERROR: initial guess for Ts has different location and temperature vector lengths!"<<std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        for (size_t i=0; i!=x.size(); ++i)
+        {
+            xc.push_back(x[i]);
+            TsFixed.push_back(ts[i]);
+        }
+    }
 };
 
 }
