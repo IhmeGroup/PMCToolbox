@@ -128,7 +128,6 @@ int main ()
     Cantera::vector_fp initial_Ts_x = {0., 0.0498, 0.0518, 1.5}; // locations for initial temperature values
     Cantera::vector_fp initial_Ts   = {300., 300., 1600., 1200.}; // intital solid temperatures
 
-
     bool freeflame = false; // decide if this should be a matrix-stabilized flame or freely propagating flame
     bool radiation = true; // decide if you want to include radial and axial radiation in the simulation
     int iterations = 500; // maximum number of iterations between gas and solid phase
