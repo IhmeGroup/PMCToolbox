@@ -27,23 +27,16 @@
 
 using namespace Cantera;
 
-double T0 = 300.0;
-double Tamb = T0;
-double p0 = 101325.;
-
-
-
-/*
-if (m_externTsolidEveryIteration) = false
- -> dann mus sich TsFixed setzen
-*/
+const double T0 = 300.0;
+const double Tsecond_in = T0;
+const double Tamb = T0;
+const double p0 = 101325.;
+const double inch = 0.0254; // conversion factor between inches and meters
 
 Eigen::SparseMatrix<double,Eigen::RowMajor> mat;
 Eigen::VectorXd q;
 Eigen::VectorXd radiation_rhs;
 Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::COLAMDOrdering<int> > solver;
-
-
 
 template<typename T, typename U>
 void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
@@ -66,9 +59,6 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
     Cantera::vector_fp Tg(m_points);
     Cantera::vector_fp m_divq(m_points);
     Cantera::vector_fp m_rad_radial(m_points);
-
-
-
 
     for (size_t i=0; i!=flow_first.nPoints(); ++i)
     {
@@ -98,111 +88,100 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
         Tg[flow_first.nPoints() -1 + i] = flame_second.value(1,flow_second.componentIndex("T"),i);
         Tsolid_prev[flow_first.nPoints() -1 + i] = flame_second.value(1,flow_second.componentIndex("Tsolid"),i);
     }
-    //=========================================================================================================================
 
-          //bool recalcMatrixGlobal = false;
-          //if (m_doSolidAxialRadiation && m_doSolid)
-          {
+    {
+        bool recalcMatrix = false;
+        if (prevMesh.size() != m_points)
+        {
+            recalcMatrix = true;
+        }
+        if (!recalcMatrix)
+        {
+            for(std::size_t i=0; i!=m_points; ++i)
+            {
+                if (std::abs(z[i] - prevMesh[i]) > 1e-8)
+                {
+                    recalcMatrix = true;
+                    break;
+                }
+            }
+        }
+        if (recalcMatrix)
+        {
+            prevMesh.resize(m_points);
+            for(std::size_t i=0; i!=m_points; ++i)
+                prevMesh[i] = z[i];
+        }
 
-              bool recalcMatrix = false;
-              if (prevMesh.size() != m_points)
-              {
-                  recalcMatrix = true;
-              }
-              if (!recalcMatrix)
-              {
-                  for(std::size_t i=0; i!=m_points; ++i)
-                  {
-                      if (std::abs(z[i] - prevMesh[i]) > 1e-8)
-                      {
-                          recalcMatrix = true;
-                          break;
-                      }
-                  }
-              }
-              if (recalcMatrix)
-              {
-                  prevMesh.resize(m_points);
-                  for(std::size_t i=0; i!=m_points; ++i)
-                      prevMesh[i] = z[i];
-              }
+        constexpr int non_zeros_per_col = 3;
 
-              //recalcMatrixGlobal = recalcMatrix;
+        if (recalcMatrix)
+        {
+            mat = Eigen::SparseMatrix<double,Eigen::RowMajor>(2*m_points,2*m_points);
+            mat.reserve(Eigen::Matrix<int, Eigen::Dynamic, 1>::Constant(2*m_points, non_zeros_per_col));
 
-              constexpr int non_zeros_per_col = 3;
+            mat.insert(0,0) = 1.0;
+            for (int i=1; i!=static_cast<int>(m_points); ++i)
+            {
+                mat.insert(i, i-1) = -1.0;
+                mat.insert(i, i) = 1.0+(z[i]-z[i-1])*m_extinctionCoefficient[i]*(2.0-m_scatteringAlbedo[i]);
+                mat.insert(i, i+m_points) = -(z[i]-z[i-1])*m_extinctionCoefficient[i]*m_scatteringAlbedo[i];
+            }
+            for (int j=m_points; j!=2*static_cast<int>(m_points)-1; ++j)
+            {
+                int i = j-m_points;
+                mat.insert(j, j-m_points) = -(z[i+1]-z[i])*m_extinctionCoefficient[i]*m_scatteringAlbedo[i];
+                mat.insert(j, j) = 1.0+(z[i+1]-z[i])*m_extinctionCoefficient[i]*(2.0-m_scatteringAlbedo[i]);
+                mat.insert(j, j+1) = -1.0;
+            }
+            mat.insert(2*m_points-1,2*m_points-1) = 1.0;
+            mat.makeCompressed();
 
-              if (recalcMatrix)
-              {
-                  mat = Eigen::SparseMatrix<double,Eigen::RowMajor>(2*m_points,2*m_points);
-                  mat.reserve(Eigen::Matrix<int, Eigen::Dynamic, 1>::Constant(2*m_points, non_zeros_per_col));
+            q.resize(2*m_points);
+            radiation_rhs.resize(2*m_points);
+            radiation_rhs(0) = StefanBoltz*std::pow(m_T_amb,4.0);
+            radiation_rhs(2*m_points-1) = radiation_rhs(0);
 
-                  mat.insert(0,0) = 1.0;
-                  for (int i=1; i!=static_cast<int>(m_points); ++i)
-                  {
-                      mat.insert(i, i-1) = -1.0;
-                      mat.insert(i, i) = 1.0+(z[i]-z[i-1])*m_extinctionCoefficient[i]*(2.0-m_scatteringAlbedo[i]);
-                      mat.insert(i, i+m_points) = -(z[i]-z[i-1])*m_extinctionCoefficient[i]*m_scatteringAlbedo[i];
-                  }
-                  for (int j=m_points; j!=2*static_cast<int>(m_points)-1; ++j)
-                  {
-                      int i = j-m_points;
-                      mat.insert(j, j-m_points) = -(z[i+1]-z[i])*m_extinctionCoefficient[i]*m_scatteringAlbedo[i];
-                      mat.insert(j, j) = 1.0+(z[i+1]-z[i])*m_extinctionCoefficient[i]*(2.0-m_scatteringAlbedo[i]);
-                      mat.insert(j, j+1) = -1.0;
-                  }
-                  mat.insert(2*m_points-1,2*m_points-1) = 1.0;
-                  mat.makeCompressed();
+            solver.compute(mat);
+            auto res = solver.info();
+            if(res != Eigen::Success)
+            {
+                std::cout<<"ERROR: eigen stage 1 fail"<<std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+            if (res == Eigen::NumericalIssue)
+            {
+                std::cout<<"ERROR: eigen stage 1 fail - numerics"<<std::endl;
+                std::exit(EXIT_FAILURE);
 
-                  q.resize(2*m_points);
-                  radiation_rhs.resize(2*m_points);
-                  radiation_rhs(0) = StefanBoltz*std::pow(m_T_amb,4.0);
-                  radiation_rhs(2*m_points-1) = radiation_rhs(0);
+            }
+        }
 
-                  solver.compute(mat);
-                  auto res = solver.info();
-                  if(res != Eigen::Success)
-                  {
-                      std::cout<<"ERROR: eigen stage 1 fail"<<std::endl;
-                      std::exit(EXIT_FAILURE);
-                  }
-                  if (res == Eigen::NumericalIssue)
-                  {
-                      std::cout<<"ERROR: eigen stage 1 fail - numerics"<<std::endl;
-                      std::exit(EXIT_FAILURE);
+        for (int i=1; i!=static_cast<int>(m_points); ++i)
+            radiation_rhs(i) = (z[i]-z[i-1])*2.0*m_extinctionCoefficient[i]*(1.0-m_scatteringAlbedo[i])*StefanBoltz*std::pow(Tsolid_prev[i], 4.0);
+        for (int j=m_points; j!=2*static_cast<int>(m_points)-1; ++j)
+        {
+            int i = j-m_points;
+            radiation_rhs(j) = (z[i+1]-z[i])*2.0*m_extinctionCoefficient[i]*(1.0-m_scatteringAlbedo[i])*StefanBoltz*std::pow(Tsolid_prev[i], 4.0);
+        }
 
-                  }
-              }
+        q = solver.solve(radiation_rhs);
+        auto res = solver.info();
+        if(res != Eigen::Success)
+        {
+            std::cout<<"ERROR: eigen stage 1 fail"<<std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (res == Eigen::NumericalIssue)
+        {
+            std::cout<<"ERROR: eigen stage 1 fail - numerics"<<std::endl;
+            std::exit(EXIT_FAILURE);
 
+        }
 
-
-              for (int i=1; i!=static_cast<int>(m_points); ++i)
-                  radiation_rhs(i) = (z[i]-z[i-1])*2.0*m_extinctionCoefficient[i]*(1.0-m_scatteringAlbedo[i])*StefanBoltz*std::pow(Tsolid_prev[i], 4.0);
-              for (int j=m_points; j!=2*static_cast<int>(m_points)-1; ++j)
-              {
-                  int i = j-m_points;
-                  radiation_rhs(j) = (z[i+1]-z[i])*2.0*m_extinctionCoefficient[i]*(1.0-m_scatteringAlbedo[i])*StefanBoltz*std::pow(Tsolid_prev[i], 4.0);
-              }
-
-              q = solver.solve(radiation_rhs);
-              auto res = solver.info();
-              if(res != Eigen::Success)
-              {
-                  std::cout<<"ERROR: eigen stage 1 fail"<<std::endl;
-                  std::exit(EXIT_FAILURE);
-              }
-              if (res == Eigen::NumericalIssue)
-              {
-                  std::cout<<"ERROR: eigen stage 1 fail - numerics"<<std::endl;
-                  std::exit(EXIT_FAILURE);
-
-              }
-
-              for (int i=0; i!=static_cast<int>(m_points); ++i)
-                  m_divq[i] = 2*m_extinctionCoefficient[i]*(1.0-m_scatteringAlbedo[i])*(2.0*StefanBoltz*std::pow(Tsolid_prev[i], 4.0) - (q[i]+q[i+m_points]));
-          }
-
-
-
+        for (int i=0; i!=static_cast<int>(m_points); ++i)
+            m_divq[i] = 2*m_extinctionCoefficient[i]*(1.0-m_scatteringAlbedo[i])*(2.0*StefanBoltz*std::pow(Tsolid_prev[i], 4.0) - (q[i]+q[i+m_points]));
+    }
 
     // =========================================================================================================================
     Eigen::SparseMatrix<double,Eigen::RowMajor> Tsolid_mat = Eigen::SparseMatrix<double,Eigen::RowMajor>(m_points,m_points);
@@ -292,7 +271,7 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
     TsFixed.resize(m_points);
     xc.resize(m_points);
 
-    double m_relax = 0.;//1.0;
+    double m_relax = 1.0;//0.7;
     for (int i=0; i!=static_cast<int>(m_points); ++i)
     {
         TsFixed[i] = m_relax*Tsolid_q(i) + (1.-m_relax)*Tsolid_prev[i];
@@ -301,13 +280,6 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
 }
 
 
-//===============================
-/*
-
-          */
-
-
-double inch = 0.0254; // conversion factor between inches and meters
 
 template<typename F>
 double bisect(F& f, double a, double b)
@@ -318,10 +290,10 @@ double bisect(F& f, double a, double b)
         std::exit(EXIT_FAILURE);;
     }
     double c = a;
-    while ((b-a) >= 1e-5)
+    while ((b-a) >= 1e-8)
     {
         c = 0.5*(a+b);
-        if (std::abs(f(c)) < 1e-7)
+        if (std::abs(f(c)) < 1e-9)
             break;
         else if (f(c)*f(a) < 0.)
             b = c;
@@ -451,8 +423,6 @@ std::vector<FoamProperties> createFoamsSecondStage()
     SiC_10PPI.tortuosity_factor         = std::make_shared<Cantera::Const1>(Cantera::Const1(1.15014));
     SiC_10PPI.extinction_coefficient    = std::make_shared<Cantera::Const1>(Cantera::Const1(683.));
 
-
-
     FoamProperties SiC_20PPI;
 
     double SiC_20PPI_porosity            = 0.86;
@@ -503,8 +473,8 @@ int main ()
     Cantera::vector_fp initial_Ts_x = {0., 0.0498, 0.0518, 1.5}; // locations for initial temperature values
     Cantera::vector_fp initial_Ts   = {300., 300., 1600., 1200.}; // intital solid temperatures
 
-
-
+    // ================================================
+    // ==================  INPUT ======================
 
     // conditions first stage
     std::string fuel = "NH3";
@@ -512,15 +482,12 @@ int main ()
     std::vector<double> phis{1.3};
     Cantera::vector_fp mdots{0.30};
 
-
     //conditions second stage:
     double phi_p = phis[0];
     double mdot_p = mdots[0];
     double phi_g = 0.95;
     double mdot_g = -1.;
     double phi_s = 0.5; // asummes hydrogen/air
-    double Tsecond_in = 300.;
-
 
     // =============================================
 
@@ -531,7 +498,6 @@ int main ()
         second_stage_pure_air = true;
 
     std::cout<<"HERE1"<<std::endl;
-
 
     if (second_stage_pure_air)
     {
@@ -605,7 +571,6 @@ int main ()
         mdot_g = bisect(get_phi_g, 0, mdot_g);
     }
 
-
     double mdot_s = mdot_g - mdot_p;
     std::cout<<"Second stage info:\n";
     std::cout<<"mdot_g: "<<mdot_g<<'\n';
@@ -618,11 +583,11 @@ int main ()
     int iterations = 500; // maximum number of iterations between gas and solid phase
     double residual = 0.1; // stop iterating once the residuals of both gas and solid temperature are below this value
     double residual_second = 0.01;
+    double final_residual = 0.01;
     double relax = 1.0; // explicit under-relaxation factor
 
     auto& gas = *sol.thermo();
     size_t nsp = gas.nSpecies();
-
 
     // setup the first stage
     double pressure = p0;
@@ -700,7 +665,6 @@ int main ()
     flow.set_relaxation(relax);
     flow.set_fixedTemperature(true);
     flow.solveEnergyEqn();
-
 
     auto setTx = [&flow,&flame,flowdomain](Cantera::vector_fp& x, Cantera::vector_fp& T, Cantera::vector_fp& Ts)
     {
@@ -848,9 +812,6 @@ int main ()
         std::cout<<gas.speciesName(k)<<" "<<YSecond_in[k]<<"\n";
     //=====================================================================
 
-   
-
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     // setup the second stage
     gas.setState_TPY(Tsecond_in_combined, pressure, YSecond_in.data());
     gas.getMoleFractions(x.data());
@@ -868,9 +829,6 @@ int main ()
 
 
     Cantera::PorousFlow flow_second(foam_stack_secondStage, &gas);
-
-
-
     z.resize(nInitialPoints+2);
     z[0]=0;
     dz = initialFlameProfileThickness / (nInitialPoints - 1);
@@ -894,7 +852,6 @@ int main ()
     inlet_second.setMoleFractions(x.data());
     uin = mdot_g/(rho_in*foam_stack_secondStage.get_local_foam_properties(0.0, Tsecond_in_combined).porosity);
     inlet_second.setMdot(mdot_g);
-
     inlet_second.setTemperature(Tfirst_out);
     inlet_second.setTsolid(Tsfirst_out);
     Cantera::OutletWithSolid1D outlet_second;
@@ -942,8 +899,6 @@ int main ()
             T[i] = flame_second.value(flowdomain,flow_second.componentIndex("T"),i);
         }
     };
-
-
 
     // solve the second stage
     {
@@ -1008,6 +963,7 @@ int main ()
             std::cout<<flow_second.grid(i)<<" "<<flame_second.value(flowdomain,flow_second.componentIndex("T"),i)<<" "<<flame_second.value(flowdomain,flow_second.componentIndex("Tsolid"),i)<<"\n";
         }
 
+        /*
         std::cout<<"Inlet conditions for second stage:"<<std::endl;
         std::cout<<"Tfirst out: "<<Tfirst_out<<std::endl;
         std::cout<<"Tsecond in: "<<Tsecond_in_combined<<std::endl;
@@ -1016,16 +972,14 @@ int main ()
         for(size_t k=0; k!=nsp; ++k)
             std::cout<<gas.speciesName(k)<<" "<<YSecond_in[k]<<"\n";
         std::cout<<"Tad "<<Tad<<std::endl;
-
+        */
     }
 
     // at this point, we have converged solutions for the first stage, and the second stage with correct inlet conditions
 
-
     Cantera::vector_fp xc;
     Cantera::vector_fp prevMesh;
     Cantera::vector_fp TsFixed;
-
 
     Cantera::vector_fp gasTs_prev;
     Cantera::vector_fp gasT_prev;
@@ -1066,8 +1020,7 @@ int main ()
             flow_second.xc[i] = xc[i+flow.nPoints()-1];
             flow_second.TsFixed[i] = TsFixed.at(i+flow.nPoints()-1);
         }
-
-
+        flow_second.xc[0] = 0.;
         // do not solve the solid temperature. use the fixed values
         flow.set_externTsolidEveryIteration(false);
         flow_second.set_externTsolidEveryIteration(false);
@@ -1122,16 +1075,62 @@ int main ()
         std::cout<<"L2 1st stage solid: "<<L2solid<<'\n';
         std::cout<<"L2 2nd stage gas:   "<<L2gas_second<<'\n';
         std::cout<<"L2 2nd stage solid: "<<L2solid_second<<'\n';
+        gasx_curr.swap(gasx_prev);
+        gasT_curr.swap(gasT_prev);
+        gasTs_curr.swap(gasTs_prev);
+        gasx_curr_second.swap(gasx_prev_second);
+        gasT_curr_second.swap(gasT_prev_second);
+        gasTs_curr_second.swap(gasTs_prev_second);
+
+        if (L2gas<final_residual && L2solid<final_residual && L2gas_second<final_residual && L2solid_second<final_residual)
+            break;
     }
 
-    std::cout<<"================================================================================="<<std::endl;
-    for(size_t i=0; i!=xc.size(); ++i)
+    std::ofstream write("table.txt");
+    write<<"#x u rho mdot phi T Ts ";
+    for(size_t k=0; k!=gas.nSpecies(); ++k)
+        write << gas.speciesName(k)<<" ";
+    write<<'\n';
+
+    vector_fp Ytmp(nsp);
+    for(size_t i=0;i!=flow.nPoints()-1; ++i)
     {
-        std::cout<<xc[i]<<" "<<TsFixed[i]<<'\n';
+        for(size_t k=0;k!=nsp;++k)
+            Ytmp[k] = flame.value(flowdomain,flow.componentIndex(gas.speciesName(k)),i);
+        double Ttmp = flame.value(flowdomain,flow.componentIndex("T"),i);
+        gas.setState_TPY(Ttmp,p0,Ytmp.data());
+
+        write << flow.grid(i) << " ";
+        write << flame.value(flowdomain,flow.componentIndex("velocity"),i) << " ";
+        write << gas.density() << " ";
+        write << flame.value(flowdomain,flow.componentIndex("velocity"),i) * gas.density() * foam_stack.get_local_foam_properties(flow.grid(i), Ttmp).porosity<<" ";
+        write << gas.equivalenceRatio() << " ";
+        write << Ttmp<<" ";
+        write << flame.value(flowdomain,flow.componentIndex("Tsolid"),i)<<" ";
+        for(size_t k=0;k!=nsp;++k)
+            write << Ytmp[k] << " ";
+        write<<'\n';
     }
 
-    std::exit(EXIT_SUCCESS);
+    for(size_t i=0;i!=flow_second.nPoints(); ++i)
+    {
+        for(size_t k=0;k!=nsp;++k)
+            Ytmp[k] = flame_second.value(flowdomain,flow_second.componentIndex(gas.speciesName(k)),i);
+        double Ttmp = flame_second.value(flowdomain,flow_second.componentIndex("T"),i);
+        gas.setState_TPY(Ttmp,p0,Ytmp.data());
 
-    //todo: plot ts, phi, mdot
+        write << flow_second.grid(i)+totalLength << " ";
+        write << flame_second.value(flowdomain,flow_second.componentIndex("velocity"),i) << " ";
+        write << gas.density() << " ";
+        write << flame_second.value(flowdomain,flow_second.componentIndex("velocity"),i) * gas.density() * foam_stack_secondStage.get_local_foam_properties(flow_second.grid(i), Ttmp).porosity<<" ";
+        write << gas.equivalenceRatio() << " ";
+        write << Ttmp<<" ";
+        write << flame_second.value(flowdomain,flow_second.componentIndex("Tsolid"),i)<<" ";
+        for(size_t k=0;k!=nsp;++k)
+            write << Ytmp[k] << " ";
+        write<<'\n';
+    }
+    write.close();
+    std::exit(EXIT_SUCCESS);
 }
 
