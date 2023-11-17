@@ -81,7 +81,7 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
         m_rad_radial[flow_first.nPoints() -1 + i] = flow_second.m_rad_radial[i];
         m_porosity[flow_first.nPoints() -1 + i] = flow_second.m_porosity[i];
         m_emissivity[flow_first.nPoints() -1 + i] = flow_second.m_emissivity[i];
-        z[flow_first.nPoints() -1 + i] = flow_second.grid(i);
+        z[flow_first.nPoints() -1 + i] = flow_second.grid(i) + flow_first.grid(flow_first.nPoints()-1);
         Tg[flow_first.nPoints() -1 + i] = flame_second.value(1,flow_second.componentIndex("T"),i);
         Tsolid_prev[flow_first.nPoints() -1 + i] = flame_second.value(1,flow_second.componentIndex("Tsolid"),i);
     }
@@ -993,7 +993,7 @@ int main ()
         flow_second.TsFixed.resize(flow_second.nPoints());
         for(size_t i = 0; i!=flow_second.nPoints(); ++i)
         {
-            flow_second.xc[i] = xc[i+flow.nPoints()-1];
+            flow_second.xc[i] = xc[i+flow.nPoints()-1] - xc[flow.nPoints()-1];
             flow_second.TsFixed[i] = TsFixed.at(i+flow.nPoints()-1);
         }
         flow_second.xc[0] = 0.;
