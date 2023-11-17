@@ -396,7 +396,7 @@ std::vector<FoamProperties> createFoamsSecondStage()
     SiC_3PPI.specific_area              = std::make_shared<Cantera::Const1>(Cantera::Const1(SiC_3PPI_specific_area));
     SiC_3PPI.hydraulic_diameter         = std::make_shared<Cantera::Const1>(Cantera::Const1(4.0*SiC_3PPI_porosity/SiC_3PPI_specific_area));
     SiC_3PPI.solidPhase                 = Cantera::newSolution("data/SiC_new.yaml");
-    SiC_3PPI.height                     = inch - gapwidth;
+    SiC_3PPI.height                     = inch - 0.5*gapwidth;
     SiC_3PPI.emissivity                 = emissivity;
     SiC_3PPI.heatCond_eff_factor        = std::make_shared<Cantera::Const1>(Cantera::Const1(0.0506));
     SiC_3PPI.insulationTransmissivity   = transmissivity;
@@ -415,7 +415,7 @@ std::vector<FoamProperties> createFoamsSecondStage()
     SiC_10PPI.specific_area             = std::make_shared<Cantera::Const1>(Cantera::Const1(SiC_10PPI_specific_area));
     SiC_10PPI.hydraulic_diameter        = std::make_shared<Cantera::Const1>(Cantera::Const1(4.0*SiC_10PPI_porosity/SiC_10PPI_specific_area));
     SiC_10PPI.solidPhase                = Cantera::newSolution("data/SiC_new.yaml");
-    SiC_10PPI.height                    = inch - 0.5*gapwidth;
+    SiC_10PPI.height                    = inch - gapwidth;
     SiC_10PPI.emissivity                = emissivity;
     SiC_10PPI.heatCond_eff_factor       = std::make_shared<Cantera::Const1>(Cantera::Const1(0.0432));
     SiC_10PPI.insulationTransmissivity  = transmissivity;
@@ -433,7 +433,7 @@ std::vector<FoamProperties> createFoamsSecondStage()
     SiC_20PPI.specific_area              = std::make_shared<Cantera::Const1>(Cantera::Const1(SiC_20PPI_specific_area));
     SiC_20PPI.hydraulic_diameter         = std::make_shared<Cantera::Const1>(Cantera::Const1(4.0*SiC_20PPI_porosity/SiC_20PPI_specific_area));
     SiC_20PPI.solidPhase                 = Cantera::newSolution("data/SiC_new.yaml");
-    SiC_20PPI.height                     = inch - gapwidth;
+    SiC_20PPI.height                     = inch - 0.5*gapwidth;
     SiC_20PPI.emissivity                 = emissivity;
     SiC_20PPI.heatCond_eff_factor        = std::make_shared<Cantera::Const1>(Cantera::Const1(1.0-0.86));
     SiC_20PPI.insulationTransmissivity   = transmissivity;
@@ -461,7 +461,7 @@ int main ()
     auto& sol = *solu;
     double diameter = 2*inch;
     FoamStack foam_stack(createFoams(), diameter);
-    FoamStack foam_stack_secondStage(createFoams(), diameter);
+    FoamStack foam_stack_secondStage(createFoamsSecondStage(), diameter);
     // settings for the first stage
     double initialFlameProfileThickness = 0.025;
     std::size_t nInitialPoints = 3;
