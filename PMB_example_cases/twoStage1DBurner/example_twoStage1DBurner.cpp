@@ -4,7 +4,6 @@
 //  November 2023
 // ========================================================================
 
-
 #include <cantera/ext/fmt/core.h>
 #include <cantera/ext/fmt/printf.h>
 #include <cantera/numerics/Func1.h>
@@ -66,7 +65,6 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
         m_hv[i] = flow_first.m_hv[i];
         m_scatteringAlbedo[i] = flow_first.m_scatteringAlbedo[i];
         m_extinctionCoefficient[i] = flow_first.m_extinctionCoefficient[i];
-        //m_divq[i] = flow_first.m_divq[i];
         m_rad_radial[i] = flow_first.m_rad_radial[i];
         m_porosity[i] = flow_first.m_porosity[i];
         m_emissivity[i] = flow_first.m_emissivity[i];
@@ -80,7 +78,6 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
         m_hv[flow_first.nPoints() -1 + i] = flow_second.m_hv[i];
         m_scatteringAlbedo[flow_first.nPoints() -1 + i] = flow_second.m_scatteringAlbedo[i];
         m_extinctionCoefficient[flow_first.nPoints() -1 + i] = flow_second.m_extinctionCoefficient[i];
-        //m_divq[flow_first.nPoints() -1 + i] = flow_second.m_divq[i];
         m_rad_radial[flow_first.nPoints() -1 + i] = flow_second.m_rad_radial[i];
         m_porosity[flow_first.nPoints() -1 + i] = flow_second.m_porosity[i];
         m_emissivity[flow_first.nPoints() -1 + i] = flow_second.m_emissivity[i];
@@ -192,10 +189,8 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
     Tsolid_mat.reserve(Eigen::Matrix<int, Eigen::Dynamic, 1>::Constant(m_points, non_zeros_per_col));
     Tsolid_mat.insert(0,0) = 1.0;
 
-
     for (int i=1; i!=static_cast<int>(m_points-1); ++i)
     {
-
         double lambda_mid_left = 0.5*(m_effectiveSolidHeatConductivity[i-1]+m_effectiveSolidHeatConductivity[i]);
         double lambda_mid_right = 0.5*(m_effectiveSolidHeatConductivity[i+1]+m_effectiveSolidHeatConductivity[i]);
 
@@ -278,7 +273,6 @@ void solveTsolid(T& flow_first, T& flow_second, U& flame_first, U& flame_second,
         xc[i] = z[i];
     }
 }
-
 
 
 template<typename F>
@@ -423,6 +417,7 @@ std::vector<FoamProperties> createFoamsSecondStage()
     SiC_10PPI.tortuosity_factor         = std::make_shared<Cantera::Const1>(Cantera::Const1(1.15014));
     SiC_10PPI.extinction_coefficient    = std::make_shared<Cantera::Const1>(Cantera::Const1(683.));
 
+
     FoamProperties SiC_20PPI;
 
     double SiC_20PPI_porosity            = 0.86;
@@ -474,7 +469,7 @@ int main ()
     Cantera::vector_fp initial_Ts   = {300., 300., 1600., 1200.}; // intital solid temperatures
 
     // ================================================
-    // ==================  INPUT ======================
+    // =============== USER INPUT =====================
 
     // conditions first stage
     std::string fuel = "NH3";
@@ -487,17 +482,14 @@ int main ()
     double mdot_p = mdots[0];
     double phi_g = 0.95;
     double mdot_g = -1.;
-    double phi_s = 0.5; // asummes hydrogen/air
+    double phi_s = 0.5; // assumes hydrogen/air
 
     // =============================================
-
-
+    // ================================================
 
     bool second_stage_pure_air = false;
     if (phi_s < 0.01)
         second_stage_pure_air = true;
-
-    std::cout<<"HERE1"<<std::endl;
 
     if (second_stage_pure_air)
     {
@@ -514,7 +506,6 @@ int main ()
         std::cout<<"ERROR! Only one of {phi_g,mdot_g} can be set!"<<std::endl;
         std::exit(EXIT_FAILURE);
     }
-    std::cout<<"HERE2"<<std::endl;
     auto solu_del = Cantera::newSolution("data/Arunthanayothin.xml");
     auto& sol_del = *solu_del;
     auto& gas_del = *sol.thermo();
@@ -531,7 +522,6 @@ int main ()
     gas_del.setState_TPY(Tsecond_in, p0, Y_second.data());
     double hsecond_in = gas_del.enthalpy_mass();
 
-    std::cout<<"HERE3"<<std::endl;
     if (phi_g < 0.)
     {
         Cantera::vector_fp Y_total(gas_del.nSpecies());
@@ -611,12 +601,15 @@ int main ()
     gas.setEquivalenceRatio(phi, fuel, oxidizer);
     gas.setState_TP(T0, pressure);
     Cantera::PorousFlow flow(foam_stack, &gas);
-    Cantera::vector_fp z(nInitialPoints+2);
+    Cantera::vector_fp z(nInitialPoints+3);
     z[0]=0;
     auto dz = initialFlameProfileThickness / (nInitialPoints - 1);
     for (std::size_t iz = 0; iz < nInitialPoints; iz++)
         z[iz + 1] = iz*dz + expected_flame_location - initialFlameProfileThickness*0.5;
-    z[nInitialPoints+1] = totalLength;
+    z[nInitialPoints+1] = totalLength - 0.001; // add a point close to the outlet to make the temperature smoother visually
+    z[nInitialPoints+2] = totalLength;
+
+
     flow.setupGrid(z.size(), &z[0]);
     std::unique_ptr<Cantera::Transport> trmix(Cantera::newTransportMgr("Mix", sol.thermo().get()));
     flow.setTransport(*trmix);
@@ -797,7 +790,7 @@ int main ()
     Cantera::vector_fp YSecond_in(nsp);
     for(size_t k=0; k!=nsp; ++k)
         YSecond_in[k] = mdot_p * Yfirst_out[k] + mdot_s * Y_second[k];
-    gas_del.setState_TPY(300.,p0,YSecond_in.data());
+    gas_del.setState_TPY(Tsecond_in,p0,YSecond_in.data());
     gas_del.getMassFractions(YSecond_in.data());
     double hsecond_in_combined = mdot_p/mdot_g * hfirst_out + mdot_s/mdot_g*hsecond_in;
     gas_del.setState_HP(hsecond_in_combined, p0);
@@ -825,8 +818,6 @@ int main ()
     rho_out = gas.density();
     Tad = gas.temperature();
     gas.setState_TPY(Tsecond_in_combined, pressure, YSecond_in.data());
-
-
 
     Cantera::PorousFlow flow_second(foam_stack_secondStage, &gas);
     z.resize(nInitialPoints+2);
@@ -958,21 +949,6 @@ int main ()
 
         std::cout<<"success"<<std::endl;
 
-        for(size_t i=0;i!=flow_second.nPoints();++i)
-        {
-            std::cout<<flow_second.grid(i)<<" "<<flame_second.value(flowdomain,flow_second.componentIndex("T"),i)<<" "<<flame_second.value(flowdomain,flow_second.componentIndex("Tsolid"),i)<<"\n";
-        }
-
-        /*
-        std::cout<<"Inlet conditions for second stage:"<<std::endl;
-        std::cout<<"Tfirst out: "<<Tfirst_out<<std::endl;
-        std::cout<<"Tsecond in: "<<Tsecond_in_combined<<std::endl;
-        std::cout<<"phi_g (arg): "<<phi_g<<"\n";
-        std::cout<<"phi_g (comp): "<<gas_del.equivalenceRatio()<<"\n";
-        for(size_t k=0; k!=nsp; ++k)
-            std::cout<<gas.speciesName(k)<<" "<<YSecond_in[k]<<"\n";
-        std::cout<<"Tad "<<Tad<<std::endl;
-        */
     }
 
     // at this point, we have converged solutions for the first stage, and the second stage with correct inlet conditions
@@ -1057,8 +1033,6 @@ int main ()
         //solve second stage with updated inlet
         flame_second.solve(loglevel,true);
 
-
-
         // evaluate temperature residuals on each domain
         setTx(gasx_curr, gasT_curr, gasTs_curr);
         interpolate_T(gasx_curr, gasx_prev, gasT_prev, T_tmp);
@@ -1131,6 +1105,8 @@ int main ()
         write<<'\n';
     }
     write.close();
+
+    std::cout<<std::endl;
     std::exit(EXIT_SUCCESS);
 }
 

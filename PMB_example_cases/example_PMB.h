@@ -73,18 +73,16 @@ bool solveFlames(Cantera::Solution& sol, Cantera::FoamStack& foam_stack, const C
 
     Cantera::PorousFlow flow(foam_stack, &gas);
 
-    Cantera::vector_fp z(nInitialPoints+2);
+    Cantera::vector_fp z(nInitialPoints+3);
     z[0]=0;
 
     auto dz = initialFlameProfileThickness / (nInitialPoints - 1);
     for (std::size_t iz = 0; iz < nInitialPoints; iz++)
         z[iz + 1] = iz*dz + expected_flame_location - initialFlameProfileThickness*0.5;
 
-    z[nInitialPoints+1] = totalLength;
-
+    z[nInitialPoints+1] = totalLength-0.001; // add point near outlet to make the T profile smoother
+    z[nInitialPoints+2] = totalLength;
     flow.setupGrid(z.size(), &z[0]);
-
-    // specify the objects to use to compute kinetic rates and transport properties
 
     std::unique_ptr<Cantera::Transport> trmix(Cantera::newTransportMgr("Mix", sol.thermo().get()));
 
