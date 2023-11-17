@@ -21,7 +21,7 @@ import SCons.Errors
 def _subst_file(target, source, env, pattern, replace):
     # Read file
     #print 'CALLING SUBST_FILE'
-    f = open(source, "rU")
+    f = open(source, "r")
     try:
         contents = f.read()
     finally:
@@ -46,7 +46,7 @@ def _subst_file(target, source, env, pattern, replace):
 # Determine which keys are used
 def _subst_keys(source, pattern):
     # Read file
-    f = open(source, "rU")
+    f = open(source, "r")
     try:
         contents = f.read()
     finally:
